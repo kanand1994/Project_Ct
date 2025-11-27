@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  firewall:
+    image: kanand1994/firewall:latest
+    container_name: firewall
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=production
+    volumes:
+      - ./data/firewall:/var/lib/firewall
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf http://localhost:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: kanand1994/nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./data/nginx/html:/usr/share/nginx/html:ro
+      - ./data/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - firewall
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  replayer:
+    image: kanand1994/replayer:latest
+    container_name: replayer
+    restart: always
+    ports:
+      - "9000:9000"
+    depends_on:
+      - firewall
+    environment:
+      - REPLAYER_MODE=prod
+    volumes:
+      - ./data/replayer:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf http://localhost:9000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
