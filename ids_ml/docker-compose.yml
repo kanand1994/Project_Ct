@@ -1,0 +1,48 @@
+services:
+  trainer:
+    image: kanand1994/trainer:latest
+    container_name: ids_ml_trainer
+    restart: unless-stopped
+    volumes:
+      - ./training_data:/app/training_data
+      - ./model_data:/app/model_data
+
+  detector:
+    image: kanand1994/detector:latest
+    container_name: ids_ml_detector
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./model_data:/app/model_data
+      - ./logs/detector:/app/logs
+
+  replay:
+    image: kanand1994/ids_ml_updated-replay:latest
+    container_name: ids_ml_replay
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./sample_data:/app/sample_data
+      - ./logs/replay:/app/logs
+    depends_on:
+      - detector
+
+  extractor:
+    image: kanand1994/extractor:latest
+    container_name: ids_ml_extractor
+    restart: unless-stopped
+    volumes:
+      - ./pcap_data:/app/pcap_data
+      - ./logs/extractor:/app/logs
+
+  nginx:
+    image: kanand1994/ids_ml_updated-nginx:latest
+    container_name: ids_ml_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - detector
+      - replay
